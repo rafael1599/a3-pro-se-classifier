@@ -1,0 +1,294 @@
+{
+  "labels": [
+    "counsel",
+    "extension",
+    "ifp"
+  ],
+  "feature_names": [
+    "year",
+    "month",
+    "n_citation",
+    "len_snippet",
+    "is_pro_se",
+    "is_in_re",
+    "attorney_len",
+    "citeCount_log",
+    "n_opcites_log",
+    "len_caseName_log",
+    "n_dockets_log",
+    "judge_freq",
+    "court_cacd",
+    "court_cand",
+    "court_flmd",
+    "court_flsd",
+    "court_ilnd",
+    "court_njd",
+    "court_nyed",
+    "court_nysd",
+    "court_paed",
+    "court_txsd",
+    "src_L",
+    "src_LU",
+    "src_U"
+  ],
+  "models": {
+    "LogisticRegression": {
+      "accuracy": 0.5689,
+      "precision_macro": 0.5628,
+      "recall_macro": 0.5676,
+      "f1_macro": 0.5633,
+      "precision_weighted": 0.5636,
+      "recall_weighted": 0.5689,
+      "f1_weighted": 0.5643,
+      "roc_auc_ovr_macro": 0.7881,
+      "confusion_matrix": [
+        [
+          20,
+          12,
+          23
+        ],
+        [
+          11,
+          39,
+          6
+        ],
+        [
+          16,
+          4,
+          36
+        ]
+      ],
+      "report_per_class": {
+        "counsel": {
+          "precision": 0.425531914893617,
+          "recall": 0.36363636363636365,
+          "f1": 0.39215686274509803
+        },
+        "extension": {
+          "precision": 0.7090909090909091,
+          "recall": 0.6964285714285714,
+          "f1": 0.7027027027027027
+        },
+        "ifp": {
+          "precision": 0.5538461538461539,
+          "recall": 0.6428571428571429,
+          "f1": 0.5950413223140496
+        }
+      },
+      "coef_abs_mean_top10": [
+        [
+          "is_pro_se",
+          0.4638
+        ],
+        [
+          "court_nysd",
+          0.3434
+        ],
+        [
+          "court_flsd",
+          0.3046
+        ],
+        [
+          "attorney_len",
+          0.264
+        ],
+        [
+          "judge_freq",
+          0.215
+        ],
+        [
+          "court_flmd",
+          0.2122
+        ],
+        [
+          "n_opcites_log",
+          0.2112
+        ],
+        [
+          "len_caseName_log",
+          0.2031
+        ],
+        [
+          "court_cand",
+          0.1092
+        ],
+        [
+          "len_snippet",
+          0.1064
+        ]
+      ]
+    },
+    "DecisionTree": {
+      "accuracy": 0.4491,
+      "precision_macro": 0.4675,
+      "recall_macro": 0.4489,
+      "f1_macro": 0.4547,
+      "precision_weighted": 0.4683,
+      "recall_weighted": 0.4491,
+      "f1_weighted": 0.4552,
+      "roc_auc_ovr_macro": 0.7095,
+      "confusion_matrix": [
+        [
+          23,
+          14,
+          18
+        ],
+        [
+          17,
+          30,
+          9
+        ],
+        [
+          30,
+          4,
+          22
+        ]
+      ],
+      "report_per_class": {
+        "counsel": {
+          "precision": 0.32857142857142857,
+          "recall": 0.41818181818181815,
+          "f1": 0.368
+        },
+        "extension": {
+          "precision": 0.625,
+          "recall": 0.5357142857142857,
+          "f1": 0.5769230769230769
+        },
+        "ifp": {
+          "precision": 0.4489795918367347,
+          "recall": 0.39285714285714285,
+          "f1": 0.41904761904761906
+        }
+      },
+      "feature_importance_top10": [
+        [
+          "is_pro_se",
+          0.2575
+        ],
+        [
+          "attorney_len",
+          0.1571
+        ],
+        [
+          "len_caseName_log",
+          0.104
+        ],
+        [
+          "n_opcites_log",
+          0.0899
+        ],
+        [
+          "year",
+          0.086
+        ],
+        [
+          "citeCount_log",
+          0.0836
+        ],
+        [
+          "judge_freq",
+          0.0498
+        ],
+        [
+          "court_nysd",
+          0.0486
+        ],
+        [
+          "len_snippet",
+          0.0398
+        ],
+        [
+          "court_flsd",
+          0.0256
+        ]
+      ]
+    },
+    "RandomForest": {
+      "accuracy": 0.5988,
+      "precision_macro": 0.599,
+      "recall_macro": 0.5981,
+      "f1_macro": 0.5958,
+      "precision_weighted": 0.5999,
+      "recall_weighted": 0.5988,
+      "f1_weighted": 0.5967,
+      "roc_auc_ovr_macro": 0.7993,
+      "confusion_matrix": [
+        [
+          26,
+          14,
+          15
+        ],
+        [
+          9,
+          45,
+          2
+        ],
+        [
+          24,
+          3,
+          29
+        ]
+      ],
+      "report_per_class": {
+        "counsel": {
+          "precision": 0.4406779661016949,
+          "recall": 0.4727272727272727,
+          "f1": 0.45614035087719296
+        },
+        "extension": {
+          "precision": 0.7258064516129032,
+          "recall": 0.8035714285714286,
+          "f1": 0.7627118644067796
+        },
+        "ifp": {
+          "precision": 0.6304347826086957,
+          "recall": 0.5178571428571429,
+          "f1": 0.5686274509803921
+        }
+      },
+      "feature_importance_top10": [
+        [
+          "attorney_len",
+          0.1439
+        ],
+        [
+          "is_pro_se",
+          0.1356
+        ],
+        [
+          "len_caseName_log",
+          0.1042
+        ],
+        [
+          "year",
+          0.0893
+        ],
+        [
+          "judge_freq",
+          0.0821
+        ],
+        [
+          "n_opcites_log",
+          0.0756
+        ],
+        [
+          "len_snippet",
+          0.0702
+        ],
+        [
+          "citeCount_log",
+          0.0608
+        ],
+        [
+          "court_flsd",
+          0.0594
+        ],
+        [
+          "month",
+          0.0513
+        ]
+      ]
+    }
+  }
+}
