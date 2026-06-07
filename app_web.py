@@ -925,6 +925,7 @@ footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);
 """
 
 INFORME_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "A3_Lopez_Perez.md")
+FIGURAS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figuras")
 
 @app.route("/informe")
 def informe():
@@ -939,6 +940,11 @@ def informe():
     except Exception:
         body = "<pre>" + (md_text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")) + "</pre>"
     return render_template_string(INFORME_HTML, body=body)
+
+@app.route("/figuras/<path:fname>")
+def figura(fname):
+    from flask import send_from_directory
+    return send_from_directory(FIGURAS_DIR, fname)
 
 @app.route("/predict", methods=["POST"])
 def predict():

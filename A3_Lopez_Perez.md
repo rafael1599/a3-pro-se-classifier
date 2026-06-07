@@ -313,63 +313,118 @@ La paridad entre el resultado local y el de producción confirma que la caché a
 
 ## 11. Justificación de los cambios respecto a los TPs anteriores
 
-Esta sección concentra, decisión por decisión, las razones por las cuales el TP3 se aparta de lo planteado en los Trabajos Prácticos 1 y 2. Se incluyen tanto los cambios metodológicos como los de implementación.
+Esta sección explica, en lenguaje llano y con ejemplos prácticos, por qué el TP3 se aparta de lo planteado en los TP1 y TP2. Cada subsección sigue el mismo formato: **qué se hacía antes**, **qué problema concreto traía**, un **ejemplo cotidiano** que cualquier persona puede imaginar, y **qué se cambió**.
 
-### 11.1 Cambio del problema de regresión/análisis exploratorio a clasificación multiclase
+### 11.1 Pasamos de "mirar y describir" los datos a "enseñarle al sistema a predecir"
 
-En los TPs anteriores la práctica se planteó como exploración y caracterización del corpus de órdenes judiciales. El TP3 exige un modelo predictivo entrenable y comparable entre familias. Se redefinió la tarea como **clasificación multiclase de tres etiquetas** (`ifp`, `counsel`, `extension`) porque es la pregunta de negocio inmediata para un litigante pro se: antes de recomendar un escrito, hay que saber a qué tipo de moción responde la orden. La consigna del profesor de mantener todo "sencillito" desaconsejaba abrir un cuarto tipo de moción aunque existiera en el corpus.
+- **Antes:** los TP1 y TP2 eran como un periodista que cuenta cuántos diarios llegaron y de dónde.
+- **Problema:** describir no resuelve nada; el litigante necesita saber **qué hacer** con la orden que tiene en la mano.
+- **Imaginá esto:** llega un sobre del juzgado y tiene tres páginas de palabras técnicas. La persona ni sabe si lo que recibió es un pedido de "litigar sin pagar costas", una "designación de abogado" o una "prórroga". Sin clasificar la orden, no se puede recomendar el escrito de respuesta correcto.
+- **Qué cambió:** ahora el sistema **toma la orden y responde "es del tipo 1, 2 o 3"**, igual que un cartero que mira el sobre y decide a qué casillero va. Elegimos esos tres tipos porque son los más frecuentes en juicios sin abogado. El profesor pidió mantenerlo **sencillo**, así que no agregamos un cuarto tipo.
 
-### 11.2 Endurecimiento de la query `"motion for extension of time"`
+### 11.2 Afinamos la búsqueda de "pedido de prórroga" para no traer basura
 
-En la descarga original del TP1/TP2 se había usado la query genérica `"extension"`, que retornaba contaminación semántica fuerte (extensiones de ADN, *line extensions* comerciales, prórrogas administrativas). El muestreo aleatorio sobre los primeros resultados confirmó tasas de falso positivo superiores al 30 %. Se endureció a `"motion for extension of time"`, que es la fórmula procesal canónica en el sistema federal estadounidense y reduce el ruido a niveles compatibles con un dataset etiquetado por query. El precio es perder cobertura de prórrogas redactadas con sinónimos, asumido conscientemente para preservar pureza de etiqueta.
+- **Antes:** buscábamos a la API la palabra suelta `extension`.
+- **Problema:** esa palabra en inglés significa muchas cosas que no tienen nada que ver con tribunales.
+- **Imaginá esto:** entrás a Google y escribís solo "manzana". Te aparecen la fruta, las computadoras Apple, la manzana de Adán y una marca de ropa. Eso mismo nos pasaba: pedíamos `extension` y nos llegaban **extensiones de cabello, de ADN, de líneas de productos comerciales, extensiones de cables**. Verificamos a mano una muestra y **3 de cada 10 resultados eran basura**.
+- **Qué cambió:** ahora le pedimos a la API la frase completa exacta que usan los jueces: `"motion for extension of time"`. Como pedir directamente "manzana roja Red Delicious" en vez de "manzana". Perdemos algunos casos escritos con sinónimos, pero a cambio recibimos lo que pedimos.
 
-### 11.3 Paginación por *cursor* en lugar de *offset*
+### 11.3 Cambiamos la forma de "pasar páginas" al descargar los datos
 
-La descarga inicial usaba `?page=N`. Una verificación de integridad descubrió que el 51 % de los registros aparecía duplicado entre páginas consecutivas, por un comportamiento conocido de la API v4 de CourtListener cuando el ordenamiento subyacente no es estable. Se migró a paginación por *cursor* siguiendo el campo `next` provisto por la propia API. La razón es operativa: sin un identificador de continuación estable, no se puede garantizar cobertura ni unicidad.
+- **Antes:** descargábamos los casos pidiendo "página 1, página 2, página 3" a la API.
+- **Problema:** la API nos devolvía **el mismo caso muchas veces en distintas páginas**. Más del 50% de lo descargado venía duplicado.
+- **Imaginá esto:** vas a una librería y le pedís al vendedor "tres bolsas con libros". El vendedor te da la bolsa 1 con cien libros y, después, las bolsas 2 y 3 con los mismos cien libros otra vez. Pagaste por trescientos, pero solo te llevás cien distintos.
+- **Qué cambió:** en lugar de pedir "página 2", ahora le decimos a la API **"continuá desde este caso exacto"**, como dejar un señalador en el libro. Así cada caso aparece una sola vez y no pisamos nada.
 
-### 11.4 Submuestreo a la clase minoritaria
+### 11.4 Igualamos la cantidad de casos de cada tipo
 
-Los TPs anteriores no requerían balanceo porque no había modelado supervisado. Para el TP3 se eligió **submuestreo a 278 filas por clase** en lugar de sobremuestreo (SMOTE u oversampling simple) por tres motivos: (i) evita inyectar datos sintéticos en un dominio jurídico donde la verosimilitud textual importa, (ii) mantiene la métrica `accuracy` comparable con `f1_macro`, y (iii) la cantidad resultante (834 filas) es suficiente para los tres modelos elegidos sin caer en sobreajuste. La pérdida de información de IFP y Counsel se asumió contra la ganancia interpretativa de un dataset balanceado.
+- **Antes:** teníamos **354** casos de un tipo, **353** de otro y **288** del tercero.
+- **Problema:** un sistema entrenado con cantidades distintas aprende a favorecer al que más vio.
+- **Imaginá esto:** le enseñás a un chico a reconocer animales mostrándole **100 fotos de gatos y 30 de perros**. Ante la duda va a decir "gato", porque vio muchos más. Pasaba lo mismo con el modelo: tendía a la clase con más ejemplos.
+- **Qué cambió:** **igualamos los tres tipos a 278 casos cada uno** (la cantidad del más chico). Descartamos algunos para emparejar, pero el sistema queda imparcial. Preferimos esto antes que **inventar casos sintéticos**, porque en derecho un caso inventado puede tener errores que confunden al modelo.
 
-### 11.5 Imputación skew-aware (media o mediana según |skew|)
+![Igualamos la cantidad de casos por tipo](figuras/fig_balanceo.png)
 
-El TP2 había aplicado imputación uniforme. La consigna del TP3 pide justificar explícitamente por qué se usa la media. Se reemplazó la regla uniforme por un criterio empírico: si la skewness absoluta es inferior a 0,5 se imputa con **media** (estimador insesgado en distribuciones aproximadamente simétricas), y si es mayor o igual a 0,5 se imputa con **mediana** (estimador robusto frente a colas pesadas). Es la posición canónica en *Han, Kamber & Pei* y en *Hastie, Tibshirani & Friedman*: la elección depende de la simetría empírica, no es una preferencia *a priori*.
+### 11.5 Decidimos caso por caso si rellenar con el "promedio" o con el "valor del medio"
 
-### 11.6 Tres familias de modelos representativas
+- **Antes:** cuando un caso no tenía algún dato (por ejemplo, la cantidad de citas legales), se rellenaba siempre con el **promedio**.
+- **Problema:** el promedio engaña cuando hay valores muy extremos.
+- **Imaginá esto:** en una sala hay **nueve personas que ganan dos mil pesos y una que gana un millón**. El promedio dice "diez mil" pero **ninguno gana eso**. Si tuvieras que adivinar el sueldo de un décimo invitado, "dos mil" (el valor del medio, la **mediana**) es mucho más realista que "diez mil" (el promedio distorsionado).
+- **Qué cambió:** ahora miramos columna por columna. Si los valores están parejos, usamos el promedio (es buen representante). Si hay valores extremos que tiran del promedio, usamos la mediana. Es lo que recomiendan los libros clásicos de estadística y respeta la consigna de "justificar por qué se usa la media".
 
-Los TPs anteriores no exigían modelado. La selección **Logistic Regression + Decision Tree + Random Forest** responde a la consigna de "tres modelos fáciles de entrenar" cubriendo tres paradigmas distintos (lineal interpretable, no lineal interpretable y *ensemble* por *bagging*). Se descartaron deliberadamente *Gradient Boosting* y redes neuronales: requerían ajuste fino de hiperparámetros que la consigna desaconseja y habrían reducido la trazabilidad de las decisiones.
+![Cuando hay un caso extremo, el promedio engaña: la mediana es más honesta](figuras/fig_imputacion.png)
 
-### 11.7 *Split* único 80/20 sin validación cruzada
+### 11.6 Elegimos tres "estilos de razonamiento" distintos para comparar
 
-Aunque la práctica recomendada en cursos previos es *k-fold*, el profesor pidió expresamente **una sola línea base y una sola línea de prueba**. Se respetó esa indicación con un único *split* estratificado 80/20 con `random_state = 42`, lo que también facilita la comparación visual de los tres modelos sobre el mismo conjunto de test. Se documenta que esta simplificación inhibe estimar la varianza del estimador, asumido por consigna.
+- **Antes:** los TPs previos no entrenaban modelos, solo describían los datos.
+- **Problema:** sin probar varios "razonadores", no hay forma de saber cuál se adapta mejor al problema.
+- **Imaginá esto:** para resolver un caso podés consultar a **un juez solo** (que suma puntos a favor y en contra), a **un experto que va haciendo preguntas en cascada** ("¿tiene abogado? ¿hace cuánto vino la orden? ¿de qué corte?"), o a **un jurado de doscientas personas que vota por mayoría**. Cada uno responde distinto.
+- **Qué cambió:** probamos los tres (regresión logística, árbol de decisión y bosque aleatorio) y nos quedamos con el que mejor adivinó: el **jurado de doscientos**, que acertó en 6 de cada 10 casos. Descartamos modelos más complejos (redes neuronales, *gradient boosting*) porque la consigna pedía simplicidad y porque cuanto más complejo el modelo, más difícil es explicar por qué decidió lo que decidió.
 
-### 11.8 Incorporación de una capa de persistencia (Supabase Postgres)
+### 11.7 Una única partición de datos, sin probar varias veces
 
-Los TPs 1 y 2 trabajaban contra archivos CSV/JSON locales. El TP3 introduce una **base de datos administrada (Supabase Postgres)** porque la fase de despliegue requiere que la inferencia esté disponible aun cuando el cupo de CourtListener se agote (125 hits/día). Se eligió Supabase sobre alternativas más pesadas por compatibilidad estándar con Postgres, sin lock-in propietario, y por simplicidad de aprovisionamiento (un único `psql` para crear la tabla).
+- **Antes:** no había entrenamiento, así que no había evaluación.
+- **Problema:** hay que probar al sistema con casos que **no vio durante el entrenamiento**, igual que un alumno no debería ver el examen antes de rendirlo.
+- **Imaginá esto:** tenés un libro de **10 capítulos**. Estudiás 8 y guardás los otros 2 para autoevaluarte después. Eso es exactamente la división 80/20.
+- **Qué cambió:** los 834 casos se dividieron en **667 para enseñar y 167 para tomar examen**. Algunos cursos recomiendan repetir esa división varias veces y promediar los resultados (más confiable). El profesor pidió expresamente **una sola partición**, así que respetamos la indicación y lo dejamos asentado como limitación.
 
-### 11.9 Diseño de una sola tabla con *payload* JSONB
+### 11.8 Sumamos una base de datos en la nube
 
-La estructura original del TP2 era un *dataframe* tabular plano. El TP3 redujo el modelo de datos a **una única tabla `cluster_cache`** con `payload` JSONB, siguiendo literalmente la consigna del profesor de "seleccionar solo una tabla, no complicarlo". El JSON conserva intacta la respuesta de la API, lo que evita errores de traducción a columnas relacionales y mantiene la trazabilidad académica del registro fuente. El índice GIN sobre `jsonb_path_ops` resuelve las consultas por subcadena sin esquemas auxiliares.
+- **Antes:** los datos vivían en archivos sueltos **dentro de la computadora del autor**.
+- **Problema:** si la computadora se apaga, el sitio web no responde. Para un servicio público, eso es inaceptable.
+- **Imaginá esto:** la diferencia entre tener las fotos **solo en el celular** (si lo perdés, las perdiste) y tenerlas **en la nube** (las ves desde cualquier dispositivo). Lo mismo con los datos: necesitábamos un lugar **siempre disponible**.
+- **Qué cambió:** sumamos **Supabase**, una base de datos PostgreSQL administrada. Elegimos esa porque PostgreSQL es un estándar conocido (mañana podemos mudarnos a otro proveedor sin reescribir nada) y porque se instala con un solo comando.
 
-### 11.10 Patrón base de datos primero y API como respaldo
+### 11.9 Una sola tabla grande en vez de muchas tablas conectadas
 
-En los TPs previos cada experimento volvía a golpear la API. El TP3 invierte el patrón: **primero se consulta Postgres**, y sólo si la caché no resuelve la consulta se llama a CourtListener. La razón es de costo y de disponibilidad: el tier público es de 125 hits diarios y un servicio web orientado a usuarios reales se queda sin presupuesto en minutos. El *upsert* idempotente (`on conflict ... do update`) mantiene fresca la fecha de último acceso sin duplicar registros.
+- **Antes:** el TP2 trabajaba con una planilla rectangular típica (filas y columnas planas).
+- **Problema:** el diseño "ortodoxo" de bases de datos divide los datos en muchas tablas conectadas. Eso es robusto pero complicado.
+- **Imaginá esto:** dos formas de archivar expedientes. **Opción A:** archivero con muchos cajones, uno para las carátulas, otro para los jueces, otro para las cortes, otro para las citas. Para reconstruir un expediente hay que ir cajón por cajón. **Opción B:** una sola carpeta gorda con todo el expediente adentro. El profesor pidió no complicar: una sola tabla.
+- **Qué cambió:** cada caso se guarda como una **carpeta completa (paquete JSON)** dentro de una única tabla. Para que las búsquedas sigan siendo rápidas, agregamos un **índice especial** (el equivalente al índice alfabético al final de un libro de mil páginas: en lugar de leer todo, vas directo al término).
 
-### 11.11 Servicio Flask en Fly.io en lugar de notebook local
+### 11.10 Consultamos primero "nuestra alacena" antes de "ir al supermercado"
 
-El TP1/TP2 entregaba *notebooks* ejecutables localmente. El TP3 requiere una pieza desplegable. Se eligió Flask por superficie mínima de API, y Fly.io en región `gru` por proximidad geográfica y por el modo `auto_stop_machines` que mantiene el costo cercano a cero cuando no hay tráfico. La elección no es vinculante: cualquier *runtime* WSGI/uvicorn resolvería el mismo problema; el criterio decisivo fue el costo operativo nulo en reposo.
+- **Antes:** cada consulta golpeaba directamente a la API pública.
+- **Problema:** la API solo permite **125 consultas gratis por día**. Con un poco de tráfico real, el cupo se acaba en minutos.
+- **Imaginá esto:** querés cocinar fideos. **Opción A** (la mala): cada vez que cocinás, vas al supermercado a comprar el paquete. Si está cerrado, te quedaste sin cena. **Opción B** (la buena): primero revisás la alacena. Si tenés el paquete, lo usás. Si no, vas al supermercado, comprás dos, usás uno y **guardás el otro en la alacena para la próxima**.
+- **Qué cambió:** ahora **primero miramos nuestra base de datos**. Si el caso está, lo devolvemos al instante. Si no, llamamos a la API, traemos el caso y lo guardamos para que la próxima persona que lo pida no consuma cupo.
 
-### 11.12 Heurística de *scoring* con bono por subcadena de apellido
+![Patrón base de datos primero, API como respaldo](figuras/fig_cache.png)
 
-La función `score_record` agrega un componente nuevo respecto al ranking textual de los TPs previos: un bono de +25 cuando la consulta aparece como subcadena dentro de `caseName`. Esta decisión nace de una falla observada en validación: un apellido distintivo (por ejemplo `porrazzo`) solo sumaba 6 puntos por token y caía bajo el umbral de 8. Se justifica semánticamente: en búsqueda jurídica, un apellido inusual es una señal de altísima confianza. El cambio se aplicó al modo `free` sin alterar el resto del baremo.
+### 11.11 Una página web pública en lugar de un cuaderno en una sola computadora
 
-### 11.13 Batería operativa de 22 consultas como línea de prueba
+- **Antes:** el TP1 y TP2 se entregaban como **cuadernos de Jupyter**: archivos que solo corren si uno los abre en una computadora con todo el entorno instalado.
+- **Problema:** un litigante real nunca va a abrir un cuaderno de programación. Necesita un sitio al que entre con el navegador y listo.
+- **Imaginá esto:** la diferencia entre entregar una **receta que solo funciona en la cocina del autor** (con sus utensilios específicos) y abrir un **restaurante al que cualquiera puede ir a comer**.
+- **Qué cambió:** publicamos un servicio en internet usando Flask (una herramienta liviana para páginas web) hospedado en Fly.io. La gran ventaja: **cuando nadie lo usa, el servidor se duerme y no cobra**; cuando alguien entra, se despierta en segundos. Costo en reposo: prácticamente cero.
 
-El TP1/TP2 evaluaba con métricas tabulares (sesgo, distribución, faltantes). El TP3 conserva esa línea base mediante el *split* 80/20, pero añade una **línea de prueba operativa**: 22 consultas que recorren cinco modos de falla típicos del usuario real (prefijos, códigos a mitad, *docket numbers*, jueces, *edge cases*). Esta segunda línea valida la cadena completa Flask → Postgres → API en condiciones que el *test set* tabular jamás replicaría.
+### 11.12 Ajustamos el puntaje de búsqueda para reconocer apellidos poco comunes
 
-### 11.14 Normalización NFKD del texto de consulta
+- **Antes:** el buscador del sitio le daba la misma cantidad de puntos a cualquier coincidencia textual.
+- **Problema:** un apellido distintivo **es muchísimo más informativo** que una palabra común, pero el sistema los trataba igual.
+- **Imaginá esto:** entrás a un edificio y preguntás en portería por dos personas. Si decís "busco a **Pérez**", el portero te pregunta cuál de los doce Pérez del edificio. Si decís "busco a **Porrazzo**", el portero sabe enseguida a quién, porque ese apellido es único. Pasaba que al buscar "Porrazzo" el sistema le ponía la misma puntuación que a "Pérez", caía bajo el umbral y se descartaba el resultado relevante.
+- **Qué cambió:** sumamos un **bono grande de puntos** cada vez que lo que la persona escribió aparece **tal cual** dentro del nombre del caso. Si el apellido es raro, el bono lo empuja por encima del umbral. El resto del sistema de puntuación quedó igual.
 
-Se añadió un paso de normalización Unicode NFKD sobre las consultas antes de comparar con los registros almacenados. La razón es práctica: el corpus de CourtListener mezcla acentos compuestos y descompuestos, y sin normalización una consulta con tilde no recupera el mismo registro que sin tilde. El paso se integró en `score_record` y no requirió cambios de esquema.
+### 11.13 Sumamos 22 consultas típicas como "examen del mundo real"
+
+- **Antes:** la evaluación se limitaba a estadísticas tabulares (cuántos faltantes, qué distribución, etc.).
+- **Problema:** las estadísticas no detectan errores de uso real, como que el sitio se rompa cuando alguien teclea raro.
+- **Imaginá esto:** probar un cajero automático no es solo verificar que la pantalla prende. Hay que probar también qué pasa si **alguien escribe el PIN equivocado, deja la tarjeta a medio insertar, o pide más plata de la que tiene**.
+- **Qué cambió:** sumamos un examen extra de **22 consultas típicas** que hace una persona común:
+  - **Nombres a medias:** "Smith v", "stateville"
+  - **Códigos de estado a la mitad:** "ny", "nys", "ca"
+  - **Números de expediente:** "15-CV-6684"
+  - **Apellidos de jueces:** "Cott", "kogan"
+  - **Casos extremos:** búsqueda vacía, solo espacios, mayúsculas, acentos, número gigantesco
+  
+  Cada una verifica que el sitio responda razonablemente y no se caiga.
+
+### 11.14 Hicimos que el sitio reconozca palabras con o sin acento
+
+- **Antes:** la comparación de texto era estricta caracter por caracter.
+- **Problema:** la misma palabra acentuada **puede guardarse de dos maneras invisibles para el ojo humano pero distintas para la computadora**.
+- **Imaginá esto:** escribís "café" en el teclado y en la pantalla ves "café". Internamente la computadora puede guardar eso como **la letra "é" entera** o como **"e" + un acento agregado aparte**. Para vos es lo mismo, para la computadora son dos cosas distintas y por eso a veces buscás algo y "no aparece" aunque esté ahí.
+- **Qué cambió:** antes de comparar, ahora **unificamos todo a una sola forma estándar**. Así, "Pérez" y "Pérez" (escritos con las dos formas) se reconocen como iguales. Es invisible para el usuario y no exigió ningún cambio en la base de datos.
 
 ---
 

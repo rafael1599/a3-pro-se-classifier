@@ -20,6 +20,7 @@ RUN pip install -r requirements.txt && apt-get purge -y build-essential && apt-g
 COPY app_web.py cache.py courtlistener.py ./
 COPY full_ifp.json full_counsel.json full_extension.json ./
 COPY A3_Lopez_Perez.md ./
+COPY figuras/ ./figuras/
 
 RUN useradd -m -u 10001 app && chown -R app:app /app
 USER app
