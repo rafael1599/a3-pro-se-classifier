@@ -882,43 +882,161 @@ INFORME_HTML = """
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Informe TP3 - Clasificador pro se</title>
+<title>Informe TP3 - Clasificador de mociones pro se</title>
 <style>
-:root { --bg:#faf9f6; --fg:#0f0f0f; --muted:#6b6b6b; --line:#e6e4de; --card:#ffffff; --accent:#0f0f0f; }
-* { box-sizing: border-box; }
-html, body { margin:0; padding:0; }
-body { font-family: -apple-system, "Inter", "Helvetica Neue", system-ui, sans-serif;
-       background: var(--bg); color: var(--fg); font-size: 17px; line-height: 1.65; }
-.wrap { max-width: 780px; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
-.eyebrow { font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.5rem; }
-.back { display: inline-block; margin-bottom: 2rem; color: var(--fg); text-decoration: underline; text-underline-offset: 4px; font-size: .92rem; }
-article h1 { font-family: Georgia, serif; font-weight: 500; font-size: 2.6rem; line-height: 1.05; letter-spacing: -.02em; margin: 0 0 1.5rem; }
-article h2 { font-family: Georgia, serif; font-weight: 500; font-size: 1.75rem; letter-spacing: -.015em; margin: 3rem 0 1rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
-article h3 { font-family: Georgia, serif; font-weight: 500; font-size: 1.25rem; margin: 2rem 0 .75rem; }
-article h4 { font-weight: 600; font-size: 1.02rem; margin: 1.5rem 0 .5rem; }
-article p { margin: 0 0 1rem; }
-article ul, article ol { margin: 0 0 1.25rem 1.25rem; padding: 0; }
-article li { margin: .3rem 0; }
-article strong { font-weight: 600; }
-article em { font-style: italic; }
-article code { background: #f1efe9; padding: .12em .35em; border-radius: 4px; font-size: .88em; }
-article pre { background: #f1efe9; padding: 1rem 1.1rem; border-radius: 10px; overflow-x: auto; font-size: .85rem; line-height: 1.5; }
-article pre code { background: transparent; padding: 0; }
-article blockquote { border-left: 3px solid var(--accent); margin: 1rem 0; padding: .25rem 0 .25rem 1rem; color: #2a2a2a; font-style: italic; }
-article hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
-article table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: .94rem; }
-article th, article td { border: 1px solid var(--line); padding: .55rem .75rem; text-align: left; vertical-align: top; }
-article th { background: #f1efe9; font-weight: 600; }
-article a { color: var(--fg); text-underline-offset: 4px; }
-footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; text-align: center; letter-spacing: .04em; }
+  :root {
+    --fg: #1a1a1a;
+    --bg: #ffffff;
+    --muted: #555;
+    --border: #ddd;
+    --accent: #0b5394;
+    --code-bg: #f5f5f5;
+    --table-head: #eaeaea;
+    --table-zebra: #fafafa;
+    --success: #2e7d32;
+    --success-bg: #e8f5e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #e6e6e6;
+      --bg: #121212;
+      --muted: #aaa;
+      --border: #333;
+      --accent: #6fa8dc;
+      --code-bg: #1e1e1e;
+      --table-head: #2a2a2a;
+      --table-zebra: #1a1a1a;
+      --success: #81c784;
+      --success-bg: #1b3a1f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  main { max-width: 900px; margin: 0 auto; padding: 48px 32px; }
+  .back { display: inline-block; margin-bottom: 16px; color: var(--accent); text-decoration: none; font-size: 0.92em; }
+  .back:hover { text-decoration: underline; }
+  .cover {
+    text-align: center;
+    padding: 32px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .cover .logo { display: block; max-width: 320px; height: auto; margin: 0 auto 28px; }
+  @media (prefers-color-scheme: dark) { .cover .logo { filter: invert(0.92) hue-rotate(180deg); } }
+  .cover h1 { font-size: 1.85em; margin: 0 0 12px; line-height: 1.25; }
+  .cover .subtitle { font-size: 1.12em; color: var(--muted); margin: 0 0 22px; font-style: italic; }
+  .cover .program { font-size: 1em; margin: 4px 0; }
+  .cover .cover-meta { margin: 18px 0 6px; font-size: 1em; }
+  .cover .cover-meta strong { color: var(--accent); }
+  .cover .integrantes-list { list-style: none; padding: 0; margin: 4px auto 16px; max-width: 560px; text-align: center; }
+  .cover .integrantes-list li { margin: 4px 0; font-size: 0.98em; }
+  .cover .fecha { color: var(--muted); margin-top: 16px; font-size: 0.95em; }
+  .success-banner {
+    background: var(--success-bg);
+    border-left: 4px solid var(--success);
+    padding: 16px 20px;
+    margin: 0 0 24px 0;
+    border-radius: 4px;
+    font-size: 1em;
+  }
+  .success-banner strong { color: var(--success); }
+  h1 { font-size: 1.7em; }
+  h2 { font-size: 1.5em; margin-top: 2em; padding-top: 0.6em; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.2em; margin-top: 1.6em; }
+  h4 { font-size: 1.05em; margin-top: 1.4em; color: var(--accent); }
+  p { margin: 0.8em 0; text-align: justify; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 0.3em 0; }
+  strong { font-weight: 700; }
+  em { font-style: italic; }
+  blockquote { border-left: 3px solid var(--accent); margin: 1em 0; padding: 0.25em 0 0.25em 1em; color: var(--muted); font-style: italic; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
+  figure { margin: 1.5em 0; text-align: center; }
+  figure img { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+  .caption { font-size: 0.92em; color: var(--muted); font-style: italic; text-align: center; margin: 0.5em 0 1.5em; }
+  code { background: var(--code-bg); padding: .12em .38em; border-radius: 4px; font-size: 0.9em; font-family: "Consolas", "Monaco", "Courier New", monospace; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 0.9em;
+    line-height: 1.45;
+  }
+  pre code { background: transparent; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; margin: 1em 0; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  thead th { background: var(--table-head); font-weight: 600; }
+  tbody tr:nth-child(even) { background: var(--table-zebra); }
+  nav.toc {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 24px;
+    margin: 24px 0 32px;
+  }
+  nav.toc .toc-title { margin: 0 0 8px; font-size: 1.1em; font-weight: 700; }
+  nav.toc .toc > ul { margin: 0; padding-left: 1.4em; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  a { color: var(--accent); }
+  footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85em; text-align: center; }
+  @media print {
+    .back, nav.toc { display: none; }
+    body { font-size: 11pt; }
+    main { padding: 0; max-width: none; }
+    h2 { page-break-before: always; }
+    .success-banner { page-break-before: avoid; page-break-inside: avoid; }
+    pre, table, figure { page-break-inside: avoid; }
+    img { max-width: 100% !important; }
+    .cover .logo { max-width: 270px !important; margin: 0 auto 18px !important; }
+    a { color: inherit; text-decoration: none; }
+  }
+  @media (max-width: 600px) {
+    main { padding: 24px 16px; }
+    .cover h1 { font-size: 1.4em; }
+  }
 </style>
 </head>
 <body>
-<main class="wrap">
-  <div class="eyebrow">Trabajo Practico 3 - Data Science Real World Applications</div>
+<main>
   <a href="/" class="back">&larr; Volver al clasificador</a>
-  <article>{{ body|safe }}</article>
-  <footer>Informe academico - Lopez Perez - 2026</footer>
+  <header class="cover">
+    <img class="logo" src="https://continentaluniversity.us/hubfs/Logotipo/LOGOTIPO_HORIZONTAL_CUF.png" alt="Universidad Continental">
+    <h1>CLASIFICACI&Oacute;N SUPERVISADA DE &Oacute;RDENES JUDICIALES FEDERALES POR TIPO DE MOCI&Oacute;N PARA LA ASISTENCIA A LITIGANTES PRO SE</h1>
+    <p class="subtitle">Clasificador multiclase con despliegue web sobre datos de CourtListener &mdash; Trabajo Pr&aacute;ctico N.&deg; 3</p>
+    <p class="program">Data Science Real World Applications &mdash; Continental University of Florida</p>
+    <p class="cover-meta"><strong>Integrantes:</strong></p>
+    <ul class="integrantes-list">
+      <li>Rafael Lopez Cordova &mdash; Ingeniero de Sistemas</li>
+      <li>Ivan Carlo Petrlik Azabache &mdash; Ingeniero de Computacion y Sistemas</li>
+      <li>Maria Teresita Maydana &mdash; Abogada, Mag. Relaciones Internacionales, Esp. I.A.</li>
+      <li>Yoandra Gisela Alvarez Perez &mdash; Ingeniera Industrial</li>
+    </ul>
+    <p class="fecha">6 de junio de 2026</p>
+  </header>
+
+  <div class="success-banner">
+    <strong>Mejor modelo:</strong> <strong>Random Forest</strong> con <strong>F1-score macro = 0.596</strong> y <strong>accuracy = 0.599</strong> (ROC-AUC OvR = 0.799) sobre 167 &oacute;rdenes de prueba en 3 clases balanceadas, frente a un baseline aleatorio de 0.333. Resultado de comparar 3 clasificadores supervisados. Aplicaci&oacute;n web de demostraci&oacute;n disponible en <a href="https://a3-pro-se-classifier.fly.dev/">a3-pro-se-classifier.fly.dev</a>.
+  </div>
+
+  <nav class="toc" aria-label="Tabla de contenidos">
+    <p class="toc-title">Tabla de contenidos</p>
+    {{ toc|safe }}
+  </nav>
+
+  {{ body|safe }}
+
+  <footer>Informe acad&eacute;mico &mdash; Lopez Perez &mdash; Data Science Real World Applications, 2026</footer>
 </main>
 </body>
 </html>
@@ -927,6 +1045,21 @@ footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line);
 INFORME_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "A3_Lopez_Perez.md")
 FIGURAS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figuras")
 
+def _imgs_a_figuras(html):
+    """Convierte <p><img alt=".." src=".."></p> en <figure> con caption numerado (Figura N.)."""
+    contador = {"n": 0}
+    def _repl(m):
+        tag = m.group(1)
+        alt = re.search(r'alt="([^"]*)"', tag)
+        src = re.search(r'src="([^"]*)"', tag)
+        alt = alt.group(1) if alt else ""
+        src = src.group(1) if src else ""
+        contador["n"] += 1
+        cap = ("Figura %d. %s" % (contador["n"], alt)).strip().rstrip(".") + "."
+        return ('<figure><img src="%s" alt="%s">'
+                '<figcaption class="caption">%s</figcaption></figure>' % (src, alt, cap))
+    return re.sub(r'<p>\s*(<img[^>]*>)\s*</p>', _repl, html)
+
 @app.route("/informe")
 def informe():
     try:
@@ -934,12 +1067,24 @@ def informe():
             md_text = f.read()
     except FileNotFoundError:
         return "Informe no disponible.", 404
+    # La portada (titulo, asignatura, fecha, tema) se renderiza en la cabecera HTML;
+    # el cuerpo del articulo empieza en la primera seccion numerada.
+    corte = md_text.find("## 1.")
+    if corte != -1:
+        md_text = md_text[corte:]
     try:
         import markdown as _md
-        body = _md.markdown(md_text, extensions=["tables", "fenced_code", "toc"])
+        md = _md.Markdown(
+            extensions=["tables", "fenced_code", "toc"],
+            extension_configs={"toc": {"toc_depth": "2-2"}},
+        )
+        body = md.convert(md_text)
+        body = _imgs_a_figuras(body)
+        toc = md.toc
     except Exception:
         body = "<pre>" + (md_text.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")) + "</pre>"
-    return render_template_string(INFORME_HTML, body=body)
+        toc = ""
+    return render_template_string(INFORME_HTML, body=body, toc=toc)
 
 @app.route("/figuras/<path:fname>")
 def figura(fname):
